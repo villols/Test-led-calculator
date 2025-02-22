@@ -1,0 +1,78 @@
+package com.example.ledpixelcalculator
+
+import android.os.Bundle import androidx.activity.ComponentActivity import androidx.activity.compose.setContent import androidx.compose.foundation.layout.* import androidx.compose.foundation.text.KeyboardOptions import androidx.compose.material3.* import androidx.compose.runtime.* import androidx.compose.ui.Modifier import androidx.compose.ui.text.input.KeyboardType import androidx.compose.ui.unit.dp import androidx.compose.ui.unit.sp
+
+class MainActivity : ComponentActivity() { override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState) setContent { LEDPixelCalculatorApp() } } }
+
+@Composable fun LEDPixelCalculatorApp() { var selectedPitch by remember { mutableStateOf("P10") } var selectedModule by remember { mutableStateOf("500mm x 500mm") } var selectedOrientation by remember { mutableStateOf("Horizontal") } var modulesWidth by remember { mutableStateOf("") } var modulesHeight by remember { mutableStateOf("") } var result by remember { mutableStateOf("") }
+
+val pitchMap = mapOf(
+    "P10" to 50,
+    "P8" to 62,
+    "P6" to 83,
+    "P5" to 100,
+    "P4" to 125,
+    "P3.91" to 128,
+    "P2.9" to 172
+)
+
+val moduleSizes = mapOf(
+    "500mm x 500mm" to Pair(500, 500),
+    "1000mm x 500mm" to Pair(1000, 500)
+)
+val orientations = listOf("Horizontal", "Vertical")
+
+Column(
+    modifier = Modifier.padding(16.dp),
+    verticalArrangement = Arrangement.spacedBy(10.dp)
+) {
+    Text(text = "Cálculo de Píxeles de Pantallas LED", fontSize = 20.sp)
+    
+    DropdownMenu(selectedPitch, pitchMap.keys.toList()) { selectedPitch = it }
+    DropdownMenu(selectedModule, moduleSizes.keys.toList()) { selectedModule = it }
+    
+    if (selectedModule == "1000mm x 500mm") {
+        DropdownMenu(selectedOrientation, orientations) { selectedOrientation = it }
+    }
+    
+    OutlinedTextField(
+        value = modulesWidth,
+        onValueChange = { modulesWidth = it },
+        label = { Text("Cantidad de módulos de ancho") },
+        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+    )
+
+    OutlinedTextField(
+        value = modulesHeight,
+        onValueChange = { modulesHeight = it },
+        label = { Text("Cantidad de módulos de alto") },
+        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+    )
+    
+    Button(onClick = {
+        val pitchValue = pitchMap[selectedPitch] ?: 50
+        val moduleSize = moduleSizes[selectedModule] ?: Pair(500, 500)
+        val moduleWidthMM = moduleSize.first
+        val moduleHeightMM = moduleSize.second
+        val modulesW = modulesWidth.toIntOrNull() ?: 0
+        val modulesH = modulesHeight.toIntOrNull() ?: 0
+        
+        val totalWidthMM = modulesW * moduleWidthMM
+        val totalHeightMM = modulesH * moduleHeightMM
+        
+        val totalWidthPx = (totalWidthMM.toFloat() / 500) * pitchValue
+        val totalHeightPx = (totalHeightMM.toFloat() / 500) * pitchValue
+        
+        result = "Tamaño total: \nAncho: ${totalWidthMM} mm\nAlto: ${totalHeightMM} mm\n" +
+                 "Resolución en píxeles: \nAncho: ${totalWidthPx.toInt()} px\nAlto: ${totalHeightPx.toInt()} px"
+    }) {
+        Text("Calcular")
+    }
+
+    Text(text = result, fontSize = 16.sp)
+}
+
+}
+
+@Composable fun DropdownMenu(selected: String, options: List<String>, onSelection: (String) -> Unit) { var expanded by remember { mutableStateOf(false) } Box { OutlinedButton(onClick = { expanded = true }) { Text(text = selected) } DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) { options.forEach { option -> DropdownMenuItem(onClick = { onSelection(option) expanded = false }) { Text(text = option) } } } } }
+
